@@ -81,7 +81,7 @@ def ls(pattern):
     )
 
     ec2_list = [i for i in transform_list(instances) if re.search(pattern, i.instance_name)]
-    num = 0
+    num = 1
     for i in ec2_list:
         click.echo('[{}] {}'.format(num, i))
         num += 1
@@ -127,14 +127,17 @@ def ssh(pattern, username, port, ssh_path):
         click.echo('No ec2 instance matches pattern')
         sys.exit(1)
     elif len(ec2_list) > 1:
-        num = 0
+        num = 1
         for i in ec2_list:
             click.echo("[{}] {}".format(num, i))
             num += 1
 
-        ec2_instance_num = click.prompt('enter ec2 # to connect to', type=int)
+        ec2_instance_num = click.prompt('Enter # of instance to connect to (0 to cancel)', type=int)
+        if ec2_instance_num == 0:
+            sys.exit()
         if ec2_instance_num >= len(ec2_list):
             click.echo('Invalid #', err=True)
+            sys.exit(1)
 
     click.echo('... connecting to {}'.format(ec2_list[ec2_instance_num].instance_name))
     instance = ec2_list[ec2_instance_num]
