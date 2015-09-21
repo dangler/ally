@@ -66,11 +66,15 @@ def get_max_length(instances):
     return 0
 
 
-@cli.command(help='list instances')
+@cli.command()
 @click.option('--search', '-s', 'pattern',
               default='', help='Pattern in name to filter with')
 def ls(pattern):
-    """list EC2 instances"""
+    """list EC2 instances
+
+    All EC2 instances matching the given
+    pattern will be listed.
+    """
     ec2 = boto3.resource('ec2')
     instances = ec2.instances.filter(
         Filters=[{'Name': 'instance-state-name', 'Values': ['running']}]
@@ -83,7 +87,7 @@ def ls(pattern):
         num += 1
 
 
-@cli.command(help='ssh to instance')
+@cli.command()
 @click.option('--search', '-s', 'pattern',
               default='', help='Pattern in name to filter with')
 @click.option('--username', '-u', 'username',
@@ -93,7 +97,15 @@ def ls(pattern):
 @click.option('--port', '-p', 'port', help='SSH port (default = 22)',
               default=22)
 def ssh(pattern, username, port, ssh_path):
-    """ssh to EC2 instance"""
+    """ssh to EC2 instance
+
+    A ssh connection will be opened to EC2
+    instance matching the given pattern. If
+    more than one EC2 instance is found, all
+    instances will be displayed so the user
+    can select which instance to connect to.
+
+    """
 
     ec2 = boto3.resource('ec2')
     instances = ec2.instances.filter(
