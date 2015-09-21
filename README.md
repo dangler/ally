@@ -41,6 +41,9 @@ Usage: ally ec2 ssh [OPTIONS]
   pattern. If more than one EC2 instance is found, all instances will be
   displayed so the user can select which instance to connect to.
 
+  The .pem file specified by the EC2 instance will be used. The key must
+  exist in the key path location.
+
 Options:
   -s, --search TEXT    Pattern in name to filter with
   -u, --username TEXT  Login username (default = centos)
