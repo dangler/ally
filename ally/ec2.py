@@ -67,9 +67,9 @@ def get_max_length(instances):
 
 
 @cli.command()
-@click.option('--search', '-s', 'pattern',
+@click.option('--search', '-s',
               default='', help='Pattern in name to filter with')
-def ls(pattern):
+def ls(search):
     """list EC2 instances
 
     All EC2 instances matching the given
@@ -80,7 +80,7 @@ def ls(pattern):
         Filters=[{'Name': 'instance-state-name', 'Values': ['running']}]
     )
 
-    ec2_list = [i for i in transform_list(instances) if re.search(pattern, i.instance_name)]
+    ec2_list = [i for i in transform_list(instances) if re.search(search, i.instance_name)]
     num = 1
     for i in ec2_list:
         click.echo('[{}] {}'.format(num, i))
@@ -88,15 +88,15 @@ def ls(pattern):
 
 
 @cli.command()
-@click.option('--search', '-s', 'pattern',
+@click.option('--search', '-s',
               default='', help='Pattern in name to filter with')
-@click.option('--username', '-u', 'username',
+@click.option('--username', '-u',
               default='centos', help='Login username (default = centos)')
-@click.option('--key-path', '-k', 'ssh_path',
-              default='~/.ssh', help='Path to SSH keys (default = ~./ssh)', type=click.Path())
 @click.option('--port', '-p', 'port', help='SSH port (default = 22)',
               default=22)
-def ssh(pattern, username, port, ssh_path):
+@click.option('--key-path', '-k',
+              default='~/.ssh', help='Path to SSH keys (default = ~./ssh)', type=click.Path())
+def ssh(search, username, port, key_path):
     """ssh to EC2 instance
 
     A ssh connection will be opened to EC2
@@ -118,9 +118,9 @@ def ssh(pattern, username, port, ssh_path):
     ec2_list = transform_list(instances)
 
     # filter list
-    r = re.compile(pattern)
-    if pattern is not None:
-        ec2_list = [i for i in ec2_list if re.search(pattern, i.instance_name)]
+    r = re.compile(search)
+    if search is not None:
+        ec2_list = [i for i in ec2_list if re.search(search, i.instance_name)]
 
     ec2_instance_num = 0
     if len(ec2_list) == 0:
@@ -132,7 +132,7 @@ def ssh(pattern, username, port, ssh_path):
             click.echo("[{}] {}".format(num, i))
             num += 1
 
-        ec2_instance_num = click.prompt('Enter # of instance to connect to (0 to cancel)', type=int)
+        ec2_instance_num = click.prompt('Enter # of instance ssh to (0 to cancel)', type=int)
         if ec2_instance_num == 0:
             sys.exit()
         if ec2_instance_num >= len(ec2_list):
@@ -144,6 +144,36 @@ def ssh(pattern, username, port, ssh_path):
 
     cmd = 'ssh {}@{} -i {} -p {}'.format(username,
                                          instance.private_ip,
-                                         '{}/{}.pem'.format(ssh_path, instance.key_name),
+                                         '{}/{}.pem'.format(key_path, instance.key_name),
                                          port)
     subprocess.call(cmd, shell=True)
+
+
+@cli.command()
+@click.option('--search', '-s',
+              default='', help='Pattern in name to filter with')
+@click.option('--username', '-u',
+              default='centos', help='Login username (default = centos)')
+@click.option('--port', '-p', help='SSH port (default = 22)',
+              default=22)
+@click.option('--key-path', '-k',
+              default='~/.ssh', help='Path to SSH keys (default = ~./ssh)', type=click.Path())
+@click.option('--file', '-f',
+              required=True, help='File to be copied to server', type=click.File())
+@click.option('--directory', '-d',
+              default='~', help='Location on remote server the file is placed', type=click.Path())
+def scp(search, username, port, ssh_path, file, directory):
+    """scp file to EC2 instance
+
+    A ssh connection will be opened to EC2
+    instance matching the given pattern. If
+    more than one EC2 instance is found, all
+    instances will be displayed so the user
+    can select which instance to connect to.
+
+    The .pem file specified by the EC2
+    instance will be used. The key must exist
+    in the key path location.
+
+    """
+    click.echo('Not implemented')
