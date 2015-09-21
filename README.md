@@ -1,14 +1,14 @@
-ally
-==========
+# ally
 
-## Description ##
+
+## Description
 
 ally makes connecting to AWS EC2 instances easier
 
 ## Installation ##
 
 ```
-todo
+pip install git+https://bitbucket.org/slalom-consulting/ally
 ```
 
 ## Usage ##
