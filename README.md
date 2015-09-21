@@ -1,20 +1,20 @@
 # ally
-
+---
 
 ## Description
 
 ally makes connecting to AWS EC2 instances easier
 
-## Installation ##
+## Installation
 
 ```
 pip install git+https://bitbucket.org/slalom-consulting/ally
 ```
 
-## Usage ##
+## Usage
 
 
-### EC2 ###
+### EC2
 
 List all EC2 instances
 
@@ -50,7 +50,7 @@ Options:
 ```
 
 
-## Configuration ##
+## Configuration
 
 AWS credential file should be created at ```~/.aws/credentials```
 
