@@ -105,6 +105,10 @@ def ssh(pattern, username, port, ssh_path):
     instances will be displayed so the user
     can select which instance to connect to.
 
+    The .pem file specified by the EC2
+    instance will be used. The key must exist
+    in the key path location.
+
     """
 
     ec2 = boto3.resource('ec2')
