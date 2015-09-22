@@ -33,8 +33,13 @@ class SimpleEC2Instance:
                 str(self.key_name).ljust(20))
 
 
-def transform_list(instances):
+def get_instances(search_filter):
     """returns formatted list of instances"""
+    ec2 = boto3.resource('ec2')
+    instances = ec2.instances.filter(
+        Filters=[{'Name': 'instance-state-name', 'Values': ['running']}]
+    )
+
     formatted_list = []
 
     name_length = get_max_length(instances)
@@ -48,7 +53,31 @@ def transform_list(instances):
                               i.key_name,
                               name_length))
 
-    return formatted_list
+    ec2_list = [i for i in formatted_list if re.search(search_filter, i.instance_name)]
+
+    return sorted(ec2_list, key=lambda i: i.instance_name)
+
+
+def get_instance(ec2_list):
+    ec2_instance_num = 0
+    if len(ec2_list) == 0:
+        click.echo('No ec2 instance matches pattern')
+        sys.exit(1)
+    elif len(ec2_list) > 1:
+        num = 1
+        for i in ec2_list:
+            click.echo("[{}] {}".format(num, i))
+            num += 1
+
+        ec2_instance_num = click.prompt('Enter # of instance ssh to (0 to cancel)', type=int)
+        if ec2_instance_num == 0:
+            sys.exit()
+        if ec2_instance_num >= len(ec2_list):
+            click.echo('Invalid #', err=True)
+            sys.exit(1)
+    click.echo('... connecting to {}'.format(ec2_list[ec2_instance_num].instance_name))
+    instance = ec2_list[ec2_instance_num - 1]
+    return instance
 
 
 def get_name(instance):
@@ -67,20 +96,16 @@ def get_max_length(instances):
 
 
 @cli.command()
-@click.option('--search', '-s',
+@click.option('--search-filter', '-s',
               default='', help='Pattern in name to filter with')
-def ls(search):
+def ls(search_filter):
     """list EC2 instances
 
     All EC2 instances matching the given
     pattern will be listed.
     """
-    ec2 = boto3.resource('ec2')
-    instances = ec2.instances.filter(
-        Filters=[{'Name': 'instance-state-name', 'Values': ['running']}]
-    )
+    ec2_list = get_instances(search_filter)
 
-    ec2_list = [i for i in transform_list(instances) if re.search(search, i.instance_name)]
     num = 1
     for i in ec2_list:
         click.echo('[{}] {}'.format(num, i))
@@ -88,7 +113,7 @@ def ls(search):
 
 
 @cli.command()
-@click.option('--search', '-s',
+@click.option('--search-filter', '-s',
               default='', help='Pattern in name to filter with')
 @click.option('--username', '-u',
               default='centos', help='Login username (default = centos)')
@@ -96,7 +121,7 @@ def ls(search):
               default=22)
 @click.option('--key-path', '-k',
               default='~/.ssh', help='Path to SSH keys (default = ~./ssh)', type=click.Path())
-def ssh(search, username, port, key_path):
+def ssh(search_filter, username, port, key_path):
     """ssh to EC2 instance
 
     A ssh connection will be opened to EC2
@@ -110,47 +135,21 @@ def ssh(search, username, port, key_path):
     in the key path location.
 
     """
+    ec2_list = get_instances(search_filter)
 
-    ec2 = boto3.resource('ec2')
-    instances = ec2.instances.filter(
-        Filters=[{'Name': 'instance-state-name', 'Values': ['running']}]
-    )
-    ec2_list = transform_list(instances)
+    instance = get_instance(ec2_list)
 
-    # filter list
-    r = re.compile(search)
-    if search is not None:
-        ec2_list = [i for i in ec2_list if re.search(search, i.instance_name)]
+    cmd = 'ssh -i {} -p {} {}@{}'.format('{}/{}.pem'.format(key_path, instance.key_name),
+                                         port,
+                                         username,
+                                         instance.private_ip)
 
-    ec2_instance_num = 0
-    if len(ec2_list) == 0:
-        click.echo('No ec2 instance matches pattern')
-        sys.exit(1)
-    elif len(ec2_list) > 1:
-        num = 1
-        for i in ec2_list:
-            click.echo("[{}] {}".format(num, i))
-            num += 1
-
-        ec2_instance_num = click.prompt('Enter # of instance ssh to (0 to cancel)', type=int)
-        if ec2_instance_num == 0:
-            sys.exit()
-        if ec2_instance_num >= len(ec2_list):
-            click.echo('Invalid #', err=True)
-            sys.exit(1)
-
-    click.echo('... connecting to {}'.format(ec2_list[ec2_instance_num].instance_name))
-    instance = ec2_list[ec2_instance_num]
-
-    cmd = 'ssh {}@{} -i {} -p {}'.format(username,
-                                         instance.private_ip,
-                                         '{}/{}.pem'.format(key_path, instance.key_name),
-                                         port)
     subprocess.call(cmd, shell=True)
 
 
 @cli.command()
-@click.option('--search', '-s',
+@click.argument('file')
+@click.option('--search-filter', '-s',
               default='', help='Pattern in name to filter with')
 @click.option('--username', '-u',
               default='centos', help='Login username (default = centos)')
@@ -158,11 +157,9 @@ def ssh(search, username, port, key_path):
               default=22)
 @click.option('--key-path', '-k',
               default='~/.ssh', help='Path to SSH keys (default = ~./ssh)', type=click.Path())
-@click.option('--file', '-f',
-              required=True, help='File to be copied to server', type=click.File())
 @click.option('--directory', '-d',
               default='~', help='Location on remote server the file is placed', type=click.Path())
-def scp(search, username, port, ssh_path, file, directory):
+def scp(search_filter, username, port, key_path, file, directory):
     """scp file to EC2 instance
 
     A ssh connection will be opened to EC2
@@ -176,4 +173,15 @@ def scp(search, username, port, ssh_path, file, directory):
     in the key path location.
 
     """
-    click.echo('Not implemented')
+    ec2_list = get_instances(search_filter)
+
+    instance = get_instance(ec2_list)
+
+    cmd = 'scp -i {} -P {} {} {}@{}:{}'.format('{}/{}.pem'.format(key_path, instance.key_name),
+                                               port,
+                                               file,
+                                               username,
+                                               instance.private_ip,
+                                               directory)
+
+    subprocess.call(cmd, shell=True)
