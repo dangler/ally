@@ -2,7 +2,7 @@ from distutils.core import setup
 
 setup(
     name='ally',
-    version='0.1',
+    version='0.2',
     packages=['ally'],
     url='',
     license='',
