@@ -75,7 +75,6 @@ def get_instance(ec2_list):
         if ec2_instance_num >= len(ec2_list):
             click.echo('Invalid #', err=True)
             sys.exit(1)
-    click.echo('... connecting to {}'.format(ec2_list[ec2_instance_num].instance_name))
     instance = ec2_list[ec2_instance_num - 1]
     return instance
 
@@ -120,7 +119,8 @@ def ls(search_filter):
 @click.option('--port', '-p', 'port', help='SSH port (default = 22)',
               default=22)
 @click.option('--key-path', '-k',
-              default='~/.ssh', help='Path to SSH keys (default = ~./ssh)', type=click.Path())
+              default='~/.ssh', help='Path to SSH keys (default = ~./ssh)',
+              type=click.Path())
 def ssh(search_filter, username, port, key_path):
     """ssh to EC2 instance
 
@@ -144,6 +144,7 @@ def ssh(search_filter, username, port, key_path):
                                          username,
                                          instance.private_ip)
 
+    click.echo('..connecting to {}({})'.format(instance.instance_name, instance.private_ip))
     subprocess.call(cmd, shell=True)
 
 
@@ -156,17 +157,20 @@ def ssh(search_filter, username, port, key_path):
 @click.option('--port', '-p', help='SSH port (default = 22)',
               default=22)
 @click.option('--key-path', '-k',
-              default='~/.ssh', help='Path to SSH keys (default = ~./ssh)', type=click.Path())
+              default='~/.ssh', help='Path to SSH keys (default = ~./ssh)',
+              type=click.Path())
 @click.option('--directory', '-d',
-              default='~', help='Location on remote server the file is placed', type=click.Path())
+              default='~', help='Location on remote server the file is placed',
+              type=click.Path())
 def scp(search_filter, username, port, key_path, file, directory):
     """scp file to EC2 instance
 
-    A ssh connection will be opened to EC2
-    instance matching the given pattern. If
-    more than one EC2 instance is found, all
-    instances will be displayed so the user
-    can select which instance to connect to.
+    The specified file will be copies to
+    the EC2 instance matching the given
+    pattern. If more than one EC2 instance
+    is found, all instances will be
+    displayed so the user can select which
+    instance to copy file to.
 
     The .pem file specified by the EC2
     instance will be used. The key must exist
@@ -184,4 +188,45 @@ def scp(search_filter, username, port, key_path, file, directory):
                                                instance.private_ip,
                                                directory)
 
+    click.echo('..coping file {} to {}({})'.format(file, instance.instance_name, instance.private_ip))
+    subprocess.call(cmd, shell=True)
+
+
+@cli.command()
+@click.argument('command')
+@click.option('--search-filter', '-s',
+              default='', help='Pattern in name to filter with')
+@click.option('--username', '-u',
+              default='centos', help='Login username (default = centos)')
+@click.option('--port', '-p', 'port', help='SSH port (default = 22)',
+              default=22)
+@click.option('--key-path', '-k',
+              default='~/.ssh', help='Path to SSH keys (default = ~./ssh)',
+              type=click.Path())
+def exe(search_filter, username, port, key_path, command):
+    """execute command on EC2 instance(s)
+
+    The specified command will be executed
+    on the EC2 instance matching the given
+    pattern. If more than one EC2 instance
+    is found, all instances will be
+    displayed so the user can select which
+    instance to execute command on.
+
+    The .pem file specified by the EC2
+    instance will be used. The key must exist
+    in the key path location.
+
+    """
+    ec2_list = get_instances(search_filter)
+
+    instance = get_instance(ec2_list)
+
+    cmd = 'ssh -i {} -p {} {}@{} \'{}\''.format('{}/{}.pem'.format(key_path, instance.key_name),
+                                                port,
+                                                username,
+                                                instance.private_ip,
+                                                command)
+
+    click.echo('..executing {} on {}({})'.format(command, instance.instance_name, instance.private_ip))
     subprocess.call(cmd, shell=True)
