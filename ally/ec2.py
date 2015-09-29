@@ -59,24 +59,37 @@ def get_instances(search_filter):
 
 
 def get_instance(ec2_list):
-    ec2_instance_num = 0
+    """returns a single instance the user selected or a collection the user selected"""
     if len(ec2_list) == 0:
         click.echo('No ec2 instance matches pattern')
         sys.exit(1)
-    elif len(ec2_list) > 1:
+    else:
         num = 1
         for i in ec2_list:
             click.echo("[{}] {}".format(num, i))
             num += 1
 
-        ec2_instance_num = click.prompt('Enter # of instance ssh to (0 to cancel)', type=int)
-        if ec2_instance_num == 0:
-            sys.exit()
-        if ec2_instance_num > len(ec2_list):
-            click.echo('Invalid #', err=True)
-            sys.exit(1)
-    instance = ec2_list[ec2_instance_num - 1]
-    return instance
+        response = click.prompt('Select instance(s), use commas to select multiple instances (0 to cancel)')
+
+        if str(response).isdigit():
+            if int(response) == 0:
+                sys.exit()
+            if int(response) > len(ec2_list):
+                click.echo('Invalid #', err=True)
+                sys.exit(1)
+
+            instance = ec2_list[response - 1]
+            return instance
+        else:
+            selections = str(response).split(',')
+            instances = []
+            for selection in selections:
+                if int(selection) > len(ec2_list):
+                    click.echo("{} is an invalid selection".format(selection), err=True)
+                    sys.exit(1)
+                instances.append(ec2_list[int(selection) - 1])
+
+            return instances
 
 
 def get_name(instance):
@@ -139,6 +152,10 @@ def ssh(search_filter, username, port, key_path):
 
     instance = get_instance(ec2_list)
 
+    if isinstance(instance, list):
+        click.echo('this command doesn\'t support connecting to multiple instances')
+        sys.exit(1)
+
     cmd = 'ssh -i {} -p {} {}@{}'.format('{}/{}.pem'.format(key_path, instance.key_name),
                                          port,
                                          username,
@@ -181,15 +198,27 @@ def scp(search_filter, username, port, key_path, file, directory):
 
     instance = get_instance(ec2_list)
 
-    cmd = 'scp -i {} -P {} {} {}@{}:{}'.format('{}/{}.pem'.format(key_path, instance.key_name),
-                                               port,
-                                               file,
-                                               username,
-                                               instance.private_ip,
-                                               directory)
+    if isinstance(instance, list):
+        for i in instance:
+            cmd = 'scp -i {} -P {} {} {}@{}:{}'.format('{}/{}.pem'.format(key_path, i.key_name),
+                                                       port,
+                                                       file,
+                                                       username,
+                                                       i.private_ip,
+                                                       directory)
 
-    click.echo('..coping file {} to {}({})'.format(file, instance.instance_name, instance.private_ip))
-    subprocess.call(cmd, shell=True)
+            click.echo('..coping file {} to {}({})'.format(file, i.instance_name, i.private_ip))
+            subprocess.call(cmd, shell=True)
+    else:
+        cmd = 'scp -i {} -P {} {} {}@{}:{}'.format('{}/{}.pem'.format(key_path, instance.key_name),
+                                                   port,
+                                                   file,
+                                                   username,
+                                                   instance.private_ip,
+                                                   directory)
+
+        click.echo('..coping file {} to {}({})'.format(file, instance.instance_name, instance.private_ip))
+        subprocess.call(cmd, shell=True)
 
 
 @cli.command()
@@ -222,11 +251,23 @@ def exe(search_filter, username, port, key_path, command):
 
     instance = get_instance(ec2_list)
 
-    cmd = 'ssh -i {} -p {} {}@{} \'{}\''.format('{}/{}.pem'.format(key_path, instance.key_name),
-                                                port,
-                                                username,
-                                                instance.private_ip,
-                                                command)
+    if isinstance(instance, list):
+        for i in instance:
+            cmd = 'ssh -i {} -p {} {}@{} \'{}\''.format('{}/{}.pem'.format(key_path, i.key_name),
+                                                        port,
+                                                        username,
+                                                        i.private_ip,
+                                                        command)
 
-    click.echo('..executing {} on {}({})'.format(command, instance.instance_name, instance.private_ip))
-    subprocess.call(cmd, shell=True)
+            click.echo('..executing {} on {}({})'.format(command, i.instance_name, i.private_ip))
+            subprocess.call(cmd, shell=True)
+
+    else:
+        cmd = 'ssh -i {} -p {} {}@{} \'{}\''.format('{}/{}.pem'.format(key_path, instance.key_name),
+                                                    port,
+                                                    username,
+                                                    instance.private_ip,
+                                                    command)
+
+        click.echo('..executing {} on {}({})'.format(command, instance.instance_name, instance.private_ip))
+        subprocess.call(cmd, shell=True)
