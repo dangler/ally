@@ -72,7 +72,7 @@ def get_instance(ec2_list):
         ec2_instance_num = click.prompt('Enter # of instance ssh to (0 to cancel)', type=int)
         if ec2_instance_num == 0:
             sys.exit()
-        if ec2_instance_num >= len(ec2_list):
+        if ec2_instance_num > len(ec2_list):
             click.echo('Invalid #', err=True)
             sys.exit(1)
     instance = ec2_list[ec2_instance_num - 1]
@@ -144,7 +144,7 @@ def ssh(search_filter, username, port, key_path):
                                          username,
                                          instance.private_ip)
 
-    click.echo('..connecting to {}({})'.format(instance.instance_name, instance.private_ip))
+    click.echo('..connecting to {} @ {}'.format(instance.instance_name, instance.private_ip))
     subprocess.call(cmd, shell=True)
 
 
