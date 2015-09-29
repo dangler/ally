@@ -78,7 +78,7 @@ def get_instance(ec2_list):
                 click.echo('Invalid #', err=True)
                 sys.exit(1)
 
-            instance = ec2_list[response - 1]
+            instance = ec2_list[int(response) - 1]
             return instance
         else:
             selections = str(response).split(',')
