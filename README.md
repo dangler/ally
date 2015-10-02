@@ -1,9 +1,9 @@
 # ally
 ---
-
 ## Description
 
-ally makes connecting to AWS EC2 instances easier
+ally makes working with AWS EC2 instances easier by providing a list of instances you can perform
+varies tasks with. Tasks such as list instances, open ssh connection, copy file to, and execute command.
 
 ## Installation
 
@@ -14,7 +14,7 @@ pip install git+https://bitbucket.org/slalom-consulting/ally
 ## Usage
 
 
-### EC2
+### ally ec2 ls
 
 List all EC2 instances
 
@@ -30,6 +30,8 @@ Options:
   --help                    Show this message and exit.
 
 ```
+
+### ally ec2 ssh
 
 Connect to EC2 instance
 
@@ -53,6 +55,8 @@ Options:
   --help                    Show this message and exit.
 ```
 
+### ally ec2 scp FILE
+
 Copy file to EC2 instance
 ```
 Usage: ally ec2 scp [OPTIONS] FILE
@@ -74,6 +78,8 @@ Options:
   -d, --directory PATH      Location on remote server the file is placed
   --help                    Show this message and exit.
 ```
+
+### ally ec2 exe COMMAND
 
 Execute command on EC2 instance
 ```

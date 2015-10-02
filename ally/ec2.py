@@ -253,7 +253,7 @@ def exe(search_filter, username, port, key_path, command):
 
     if isinstance(instance, list):
         for i in instance:
-            cmd = 'ssh -i {} -p {} {}@{} \'{}\''.format('{}/{}.pem'.format(key_path, i.key_name),
+            cmd = 'ssh -t -i {} -p {} {}@{} \'{}\''.format('{}/{}.pem'.format(key_path, i.key_name),
                                                         port,
                                                         username,
                                                         i.private_ip,
@@ -263,7 +263,7 @@ def exe(search_filter, username, port, key_path, command):
             subprocess.call(cmd, shell=True)
 
     else:
-        cmd = 'ssh -i {} -p {} {}@{} \'{}\''.format('{}/{}.pem'.format(key_path, instance.key_name),
+        cmd = 'ssh -t -i {} -p {} {}@{} \'{}\''.format('{}/{}.pem'.format(key_path, instance.key_name),
                                                     port,
                                                     username,
                                                     instance.private_ip,
