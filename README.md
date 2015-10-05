@@ -8,7 +8,7 @@ varies tasks with. Tasks such as list instances, open ssh connection, copy file 
 ## Installation
 
 ```
-pip install git+https://bitbucket.org/slalom-consulting/ally
+pip install git+https://github.com/dangler/ally.git
 ```
 
 ## Usage
