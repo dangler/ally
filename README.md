@@ -1,5 +1,5 @@
 # ally
----
+
 ## Description
 
 ally makes working with AWS EC2 instances easier by providing a list of instances you can perform
