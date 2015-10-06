@@ -2,6 +2,7 @@ __author__ = 'jeremiahd'
 
 import click
 
+
 class AllyCLI(click.MultiCommand):
     """AllyCLI main class"""
 

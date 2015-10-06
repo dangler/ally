@@ -42,7 +42,7 @@ def get_instances(search_filter):
 
     formatted_list = []
 
-    name_length = get_max_length(instances)
+    name_length = max([len(get_name(i.tags)) for i in instances])
 
     for i in instances:
         formatted_list.append(
@@ -101,12 +101,6 @@ def get_name(instance):
     return result[0]
 
 
-def get_max_length(instances):
-    for i in instances:
-        return max([len(get_name(i.tags)) for i in instances])
-    return 0
-
-
 @cli.command()
 @click.option('--search-filter', '-s',
               default='', help='Pattern in name to filter with')
@@ -141,7 +135,7 @@ def ssh(search_filter, username, port, key_path):
     instance matching the given pattern. If
     more than one EC2 instance is found, all
     instances will be displayed so the user
-    can select which instance to connect to.
+    can select which instance to connect to.dese
 
     The .pem file specified by the EC2
     instance will be used. The key must exist
